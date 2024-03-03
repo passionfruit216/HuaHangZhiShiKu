@@ -61,8 +61,16 @@ split_docs = text_splitter.split_documents(docs)
 # 加载开源词向量模型
 model_name = "BAAI/bge-large-zh-v1.5"
 embeddings = HuggingFaceEmbeddings(model_name=model_name)
+
 # 构建向量数据库
 persist_directory = 'database/vector_db'
+
+if not os.path.exists(persist_directory):
+    os.makedirs(persist_directory)
+    print(f"文件夹 '{persist_directory}' 创建成功！")
+else:
+    print(f"文件夹 '{persist_directory}' 已经存在。")
+
 # 加载数据库
 vectordb = Chroma.from_documents(
     documents=split_docs,
