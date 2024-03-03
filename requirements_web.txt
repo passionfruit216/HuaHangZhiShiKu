@@ -1,0 +1,9 @@
+uvicorn==0.26.0
+fastapi==0.109.0
+transformers==4.36.2
+gradio==4.4.0
+langchain==0.0.292
+nltk==3.8.1
+requests==2.31.0
+tqdm==4.66.1
+chromadb==0.4.15
