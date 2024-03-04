@@ -4,7 +4,7 @@ import uvicorn
 import json
 import datetime
 import torch
-
+from QAchain import Model_center
 """
 此文件用于创建模型的api
 """
@@ -15,7 +15,6 @@ CUDA_DEVICE = f"{DEVICE}:{DEVICE_ID}" if DEVICE_ID else DEVICE  # 组合CUDA设�
 
 # 清理GPU内存函数
 
-
 def torch_gc():
     if torch.cuda.is_available():  # 检查是否可用CUDA
         with torch.cuda.device(CUDA_DEVICE):  # 指定CUDA设备
@@ -25,6 +24,10 @@ def torch_gc():
 
 # 创建FastAPI应用
 app = FastAPI()
+
+
+# 创建QAchain
+model_center = Model_center()
 
 # 处理POST请求的端点
 
@@ -41,20 +44,21 @@ async def create_item(request: Request):
     top_p = json_post_list.get('top_p')  # 获取请求中的top_p参数
     temperature = json_post_list.get('temperature')  # 获取请求中的温度参数
     # 调用模型进行对话生成
-    response, history = model.chat(
-        tokenizer,
-        prompt,
-        history=history,
-        max_length=max_length if max_length else 2048,  # 如果未提供最大长度，默认使用2048
-        top_p=top_p if top_p else 0.7,  # 如果未提供top_p参数，默认使用0.7
-        temperature=temperature if temperature else 0.95,  # 如果未提供温度参数，默认使用0.95
-    )
+    # response, history = model.chat(
+    #     tokenizer,
+    #     prompt,
+    #     history=history,
+    #     max_length=max_length if max_length else 2048,  # 如果未提供最大长度，默认使用2048
+    #     top_p=top_p if top_p else 0.7,  # 如果未提供top_p参数，默认使用0.7
+    #     temperature=temperature if temperature else 0.95,  # 如果未提供温度参数，默认使用0.95
+    # )
+
+    _, response = model_center.qa_chain_self_answer(prompt,history)
     now = datetime.datetime.now()  # 获取当前时间
     time = now.strftime("%Y-%m-%d %H:%M:%S")  # 格式化时间为字符串
     # 构建响应JSON
     answer = {
         "response": response,
-        "history": history,
         "status": 200,
         "time": time}
     # 构建日志信息
@@ -75,16 +79,16 @@ async def create_item(request: Request):
 
 # 主函数入口
 if __name__ == '__main__':
-    # 加载预训练的分词器和模型 (设置为 online加载也可以本地加载,修改pretrained 函数的路径即可)
-    tokenizer = AutoTokenizer.from_pretrained(
-        "THUDM/chatglm3-6b", trust_remote_code=True
-    )
-    model = (
-        AutoModel.from_pretrained("THUDM/chatglm3-6b", trust_remote_code=True)
-        .quantize(4)
-        .cuda()
-    )
-    model.eval()  # 设置模型为评估模式
+    # # 加载预训练的分词器和模型 (设置为 online加载也可以本地加载,修改pretrained 函数的路径即可)
+    # tokenizer = AutoTokenizer.from_pretrained(
+    #     "THUDM/chatglm3-6b", trust_remote_code=True
+    # )
+    # model = (
+    #     AutoModel.from_pretrained("THUDM/chatglm3-6b", trust_remote_code=True)
+    #     .quantize(4)
+    #     .cuda()
+    # )
+    # model.eval()  # 设置模型为评估模式
     # 启动FastAPI应用
     uvicorn.run(
         app, host='0.0.0.0', port=6006, workers=1
